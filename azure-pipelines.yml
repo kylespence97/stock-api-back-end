@@ -1,0 +1,39 @@
+# Docker
+# Build a Docker image 
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'Testing $(buildConfiguration)'
+      inputs:
+        command: test
+        platform: '**/**Tests/*csproj'
+        arguments: '--configuration $(buildConfiguration)'
+    - task: Docker@2
+      displayName: Build an image and push to container registry
+      inputs:
+        command: buildAndPush
+        repository: productmanagementapi
+        dockerfile: '**/Dockerfile'
+        containerRegistry: ProductManagement
+        tags: |
+          $(Build.BuildId)
+          latest
